@@ -285,8 +285,10 @@ class Broker(object):
         :type connection_id: str
         """
         if len(self._req_handlers) == 0:
+            log.info("No other handlers found. Using default handler for connection id %s", connection_id)
             self._req_handlers[connection_id] = self._req_handler
         elif connection_id not in self._req_handlers:
+            log.info("Creating a handler for connection id %s.", connection_id)
             conn = BrokerConnection(
                 self.host, self.port, self._handler, buffer_size=self._buffer_size,
                 source_host=self._source_host, source_port=self._source_port)
@@ -294,7 +296,10 @@ class Broker(object):
             handler = RequestHandler(self._handler, conn)
             handler.start()
             self._req_handlers[connection_id] = handler
-        return self._req_handlers[connection_id]
+
+        handler = self._req_handlers[connection_id]
+        log.info("Returning for connection id %s. connected=%d", connection_id, handler.shared.connection.connected)
+        return handler
 
     @_check_handler
     def fetch_messages(self,
