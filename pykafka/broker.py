@@ -286,6 +286,9 @@ class Broker(object):
         """
         if len(self._req_handlers) == 0:
             log.info("No other handlers found. Using default handler for connection id %s", connection_id)
+            if not self.connected:
+                log.warning("Default handler is disconnected. Reconnecting: connection id %s", connection_id)
+                self._connection.reconnect()
             self._req_handlers[connection_id] = self._req_handler
         elif connection_id not in self._req_handlers:
             log.info("Creating a handler for connection id %s.", connection_id)
