@@ -324,10 +324,10 @@ class ManagedBalancedConsumer(BalancedConsumer):
                 log.debug("Successfully rebalanced consumer '%s'", self._consumer_id)
                 break
             except Exception as ex:
+                log.exception(ex)
                 if i == self._rebalance_max_retries - 1:
                     log.warning('Failed to rebalance s after %d retries.', i)
                     raise
-                log.exception(ex)
                 log.info('Unable to complete rebalancing. Retrying')
                 self._cluster.handler.sleep(i * (self._rebalance_backoff_ms / 1000))
         self._raise_worker_exceptions()
