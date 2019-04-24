@@ -286,9 +286,6 @@ class Broker(object):
         """
         if len(self._req_handlers) == 0:
             log.info("No other handlers found. Using default handler for connection id %s", connection_id)
-            if not self.connected:
-                log.warning("Default handler is disconnected. Reconnecting: connection id %s", connection_id)
-                self._connection.reconnect()
             self._req_handlers[connection_id] = self._req_handler
         elif connection_id not in self._req_handlers:
             log.info("Creating a handler for connection id %s.", connection_id)
@@ -301,7 +298,13 @@ class Broker(object):
             self._req_handlers[connection_id] = handler
 
         handler = self._req_handlers[connection_id]
-        log.info("Returning for connection id %s. connected=%d", connection_id, handler.shared.connection.connected)
+
+        # Ensure that we're returning a handler with a connected connection.
+        # If the connection is disconnected, it will raise SocketDisconnectedError
+        if not handler.shared.connection.connected:
+            log.warn('Attempting to reconnect for connection id %s..', connection_id)
+            handler.shared.connection.connect(self._socket_timeout_ms)
+
         return handler
 
     @_check_handler
