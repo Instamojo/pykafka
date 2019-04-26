@@ -294,7 +294,16 @@ class Broker(object):
             handler = RequestHandler(self._handler, conn)
             handler.start()
             self._req_handlers[connection_id] = handler
-        return self._req_handlers[connection_id]
+
+        handler = self._req_handlers[connection_id]
+
+        # Ensure that we're returning a handler with a connected connection.
+        # If the connection is disconnected, it will raise SocketDisconnectedError
+        if not handler.shared.connection.connected:
+            log.warn('Attempting to reconnect for connection id %s..', connection_id)
+            handler.shared.connection.connect(self._socket_timeout_ms)
+
+        return handler
 
     @_check_handler
     def fetch_messages(self,
